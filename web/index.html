@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Test Evidence</title>
+    <meta charset="UTF-8">
+    <meta id="viewport" content="width=device-width, initial-scale=1">
+<script type="text/javascript" src="./jquery.min.js"></script>  
+</head>
+  <body>
+<script type="text/javascript">
+$(document).on("click",'#newAccountButton',function (e) {
+         //alert("new account");
+         //console.log("new account");
+         $.ajax({
+             url:'/newAccount',
+             type:'get',
+             success:function (result) {
+                 alert(result);
+                 $("infoShow").html(result);
+             },
+             error:function (msg) {
+                 alert('系统发生错误');
+             }
+         })
+     });
+
+ $(document).on("change","#file-to-upload",function(e){
+     var e = e || window.event;
+     var files = e.target.files;
+     var file = files[0];
+    //文件上传
+    $(document).on("click","#uploadFileButton",function(){
+         //alert("upload"+file);
+         var formData = new FormData();
+         formData.append('eviCaseId',$("#eviCaseId").val());
+         formData.append('privateKey',$("#eviPrivateKey").val());
+         formData.append('file-to-upload',file);
+         console.log(file);
+         $.ajax({
+              url: "/fileUpload",
+              type: "post",
+              data:formData,
+              contentType: false,
+              processData: false,
+              success: function(res){
+                   //console.log(res);
+                   $("#fileNameHash").val(res._hash);
+                   $("#fileHash").val(res._file);
+                   alert(res._msg);
+                   //window.location.reload();
+              },
+              error:function(err){
+                   console.log(err);
+              }
+           });
+         });
+      });
+    $(document).on("click","#saveEviButton",function(){
+         //alert("evidence");
+         console.log($("#privateKey").val() + "," + $("#eviCaseId").val());
+         if ($("#privateKey").val() == "" || $("#eviCaseId").val() == ""){
+             alert("输入为空!");
+             return;
+         }
+         /*if ($("#file-to-upload").val() == "" || $("#fileNameHash").val() == ""){
+             alert("没有选择文件!");
+             return;
+         }*/
+         
+         var formData = new FormData();
+         formData.append('privateKey',$("#privateKey").val());
+         formData.append('eviCaseId',$("#eviCaseId").val());
+         var fileName = $("#file-to-upload").val();
+         fileName = fileName.replace(/.*[\/\\]/, '')
+         var data = {
+             privateKey:$("#privateKey").val(),
+             eviCaseId: $("#eviCaseId").val(),
+             fileName: fileName,
+             fileNameHash: $("#fileNameHash").val(),
+             fileHash: $("#fileHash").val()
+         };
+         console.log(formData);
+         $.ajax({
+              url: "/evidence",
+              type: "post",
+              data:data,
+              success: function(res){
+                   //console.log(res);
+                   if (res.result == "ok")
+                       window.location.reload();
+                   alert(res.msg);
+              },
+              error:function(err){
+                   console.log(err);
+              }
+           });
+         });
+    $(document).on("click","#mutisigSetButton",function(){
+         //alert("evidence");
+         if ($("#fileNameHash").val() == ""){
+             alert("没有选择文件!");
+             return;
+         }
+         var data = {
+             privateKey:$("#mutiSigPrivateKey").val(),
+             eviCaseId: $("#mutiSigCaseId").val(),
+             fileNameHash: $("#fileNameHash").val(),
+             index:$("#mutiSigIndex").val()
+         };
+         $.ajax({
+              url: "/mutiSigSet",
+              type: "post",
+              data:data,
+              success: function(res){
+                   //console.log(res);
+                   alert(res);
+              },
+              error:function(err){
+                   console.log(err);
+              }
+           });
+         });
+function validateGetEvi(){
+    //alert(document.forms["getEviForm"]["getCaseId"]);
+    if ($("#getCaseId").val() == "" || $("#getName").val() == ""){
+        alert("输入为空!");
+        return false;
+    }else{
+       return true;
+    }
+} 
+function validateGetAllEvi(){
+    //if (document.forms["getAllEviForm"]["getAllCaseId"] == "" ){
+    if ($("#getAllCaseId").val() == ""){
+        alert("输入为空!");
+        return false;
+    }else{
+       return true;
+    }
+}
+
+function validateRecordEvi(){
+    if ($("#recordCaseId").val() == "" || $("#accountAddress").val() == ""){
+        alert("输入为空!");
+        return false;
+    }else{
+       return true;
+    }
+}
+
+
+</script>   
+<table>
+   <tr><td>
+      <input type="submit" id="newAccountButton" value="生成新的私钥">
+    </td></tr>
+    <tr><td>
+    <form enctype="multipart/form-data">
+     请提供案件编号 <input type=text" id="eviCaseId">
+     请提供私钥  <input type="text" id="eviPrivateKey">
+     <input type="file" id="file-to-upload">
+      <input type="button" id="uploadFileButton" value="上传">
+    </form></td></tr><tr><td><form enctype="multipart/form-data">
+      请提供私钥  <input type="text" id="privateKey">
+      <input type="hidden" id="fileNameHash" value="">
+      <input type="hidden" id="fileHash" value="">
+      <input type="button" id="saveEviButton" value="存证"></form>
+    </td></tr><tr><td>
+    <form action="/getEvidence"  method="get" name="getEviForm" onsubmit="return validateGetEvi();">
+      请提供案件编号 <input type="text" id="getCaseId" name="getCaseId">
+      请提供文件名称  <input type="text" id="getName" name="getName">
+      <input type="submit" id="getEviButton" value="按文件查证">
+    </form></td></tr>
+    <tr><td>
+    <form action="/getAllEvidence"  method="get" name="getAllEviForm" onsubmit="return validateGetAllEvi();">
+      请提供案件编号 <input type="text" id="getAllCaseId" name="getAllCaseId">
+      <input type="submit" id="getAllEviButton" value="按案件查证" >
+    </form></td></tr>
+    <tr><td>
+    <form action="/evidenceRecord"  method="get" name="eviRecordForm" onsubmit="return validateRecordEvi();">
+      请提供案件编号 <input tytep="text" id="recordCaseId" name="recordCaseId">
+      请提供账户信息  <input type="text" id="accountAddress" name="accountAddress">
+      <input type="submit" id="eviRecordButton" value="查询存证记录">
+    </form></td></tr>
+     <tr><td>
+     <form action="/mutisigSet"  method="post">
+      请提供案件编号  <input type="text" id="mutiSigCaseId">
+      请提供多方签名私钥  <input type="text" id="mutiSigPrivateKey">
+      索引(1,2) <input type="text" id="mutiSigIndex">
+      <input type="button" id="mutisigSetButton" value="设置">
+    </form></td></tr>
+     <tr><td><div id="infoShow"></div></td></tr>
+    </table>
+  </body>
+</html>
